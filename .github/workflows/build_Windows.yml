@@ -14,7 +14,7 @@ on:
       sign_artifact:
         description: 'Sign Artifact'
         required: true
-        default: 'true'
+        default: 'false'
         type: choice
         options:
           - 'true'
@@ -24,7 +24,7 @@ jobs:
   build-windows:
     strategy:
       matrix:
-        architecture: [x86_64, arm64]
+        architecture: [x86_64]
     runs-on: windows-2022
     steps:
       - name: Checkout
@@ -49,31 +49,6 @@ jobs:
           echo "VERSION=$VERSION" >> $env:GITHUB_ENV
           del version.txt
           python deploy.py
-
-      - name: Prepare For Sign
-        if: ${{ github.event.inputs.sign_artifact == 'true' }}
-        run: |
-          mv dist/Ghost-Downloader-3.dist dist/Ghost-Downloader-3-Unsigned.dist
-
-      - name: upload-unsigned-artifact
-        if: ${{ github.event.inputs.sign_artifact == 'true' }}
-        id: upload-unsigned-artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Unsigned
-          path: dist/Ghost-Downloader-3-Unsigned.dist
-
-      - name: Sign
-        if: ${{ github.event.inputs.sign_artifact == 'true' }}
-        uses: signpath/github-action-submit-signing-request@v1.1
-        with:
-          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-          organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
-          project-slug: 'Ghost-Downloader-3'
-          signing-policy-slug: 'release-signing'
-          github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
-          wait-for-completion: true
-          output-artifact-directory: 'dist/Ghost-Downloader-3.dist'
 
       - name: Download Inno Setup Translation Files
         if: ${{ github.event.inputs.package_installer == 'true' }}
